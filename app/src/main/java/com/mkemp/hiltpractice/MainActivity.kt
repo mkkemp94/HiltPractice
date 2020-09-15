@@ -14,6 +14,7 @@ import dagger.hilt.android.components.ActivityComponent
 import dagger.hilt.android.components.ApplicationComponent
 import dagger.hilt.android.scopes.ActivityScoped
 import javax.inject.Inject
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 @AndroidEntryPoint
@@ -27,24 +28,38 @@ class MainActivity : AppCompatActivity()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         
-        println(someClass.doAThing())
+        println(someClass.doAThing1())
+        println(someClass.doAThing2())
     }
 }
 
 class SomeClass
 @Inject
-constructor(
-        private val someInterfaceImpl: SomeInterface, // Cannot do constructor injection when injecting an interface...
-        private val gson: Gson // Can't inject this because I don't own it!!
-)
+constructor(@Impl1 private val someInterfaceImpl1: SomeInterface,
+            @Impl2 private val someInterfaceImpl2: SomeInterface)
 {
-    fun doAThing(): String
+    fun doAThing1(): String
     {
-        return "Look I got: ${someInterfaceImpl.getAThing()}"
+        return "Look I got 1: ${someInterfaceImpl1.getAThing()}"
+    }
+    
+    fun doAThing2(): String
+    {
+        return "Look I got 2: ${someInterfaceImpl2.getAThing()}"
     }
 }
 
-class SomeInterfaceImpl
+class SomeInterfaceImpl1
+@Inject
+constructor() : SomeInterface
+{
+    override fun getAThing(): String
+    {
+        return "A Thing"
+    }
+}
+
+class SomeInterfaceImpl2
 @Inject
 constructor() : SomeInterface
 {
@@ -63,17 +78,27 @@ interface SomeInterface
 @Module
 class MyModule
 {
+    @Impl1
     @Singleton
     @Provides
-    fun provideSomeInterfaceImpl(): SomeInterface
+    fun provideSomeInterface1(): SomeInterface
     {
-        return SomeInterfaceImpl()
+        return SomeInterfaceImpl1()
     }
     
+    @Impl2
     @Singleton
     @Provides
-    fun provideGson(): Gson
+    fun provideSomeInterface2(): SomeInterface
     {
-        return Gson()
+        return SomeInterfaceImpl2()
     }
 }
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class Impl1
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class Impl2
